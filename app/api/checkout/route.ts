@@ -18,56 +18,37 @@ export async function POST(req: NextRequest) {
     const selectedBots = BOTS.filter((b) => selectedBotIds.includes(b.id));
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 
-    // ── Build Stripe line items ──────────────────────────────────────────────
-    // Strategy:
-    //   • One subscription item per bot (monthly recurring)
-    //   • One additional one-time payment for the total setup fee
-    //
-    // Stripe Checkout supports mixed one-time + recurring items in a single
-    // session using `mode: "subscription"` with `invoice_now` for setup fees
-    // OR we use two separate sessions. The cleanest UX is:
-    //   • mode: "subscription" for recurring bots
-    //   • Add the setup fee as a one-time line item using `subscription_data.trial_period_days: 0`
-    //     and a separate invoice item — or more simply, add it as an
-    //     `add_invoice_items` entry which is charged immediately.
-
-    const subscriptionLineItems: Stripe.Checkout.SessionCreateParams.LineItem[] =
-      selectedBots.map((bot) => ({
+    const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [
+      ...selectedBots.map((bot) => ({
         price_data: {
           currency: "aud",
           product_data: {
             name: `${bot.icon} ${bot.name}`,
             description: bot.description,
-            metadata: { bot_id: bot.id, category: bot.category },
           },
-          unit_amount: bot.price * 100, // cents
-          recurring: { interval: "month" },
+          unit_amount: bot.price * 100,
+          recurring: { interval: "month" as const },
         },
         quantity: 1,
-      }));
-
-    // Setup fee as an invoice item added to the first invoice
-    const addInvoiceItems =
-      [
-        {
-          price_data: {
-            currency: "aud",
-            product_data: {
-              name: "One-Time Setup Fee",
-              description: `Setup for: ${selectedBots.map((b) => b.name).join(", ")}`,
-            },
-            unit_amount: totalSetup * 100,
+      })),
+      {
+        price_data: {
+          currency: "aud",
+          product_data: {
+            name: "One-Time Setup Fee",
+            description: `Setup for: ${selectedBots.map((b) => b.name).join(", ")}`,
           },
-          quantity: 1,
+          unit_amount: totalSetup * 100,
+          recurring: { interval: "month" as const },
         },
-      ];
+        quantity: 1,
+      },
+    ];
 
-    // ── Create the Checkout Session ──────────────────────────────────────────
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
-      line_items: subscriptionLineItems,
+      line_items: lineItems,
       subscription_data: {
-        add_invoice_items: addInvoiceItems,
         metadata: {
           bot_ids: selectedBotIds.join(","),
           lead_name: lead?.name || "",
@@ -86,11 +67,6 @@ export async function POST(req: NextRequest) {
       allow_promotion_codes: true,
       billing_address_collection: "auto",
       phone_number_collection: { enabled: true },
-      custom_text: {
-        submit: {
-          message: `You're locking in ${selectedBots.length} AI bot${selectedBots.length > 1 ? "s" : ""} for your practice. The setup fee is charged today; your monthly subscription starts immediately.`,
-        },
-      },
       metadata: {
         lead_name: lead?.name || "",
         lead_email: lead?.email || "",
