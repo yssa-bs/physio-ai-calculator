@@ -309,7 +309,7 @@ export default function App() {
                 <div style={{ fontSize: 13, color: "#6b7280" }}>Pick a time that works for you. We'll walk through your bots and get everything configured.</div>
               </div>
             </div>
-            <iframe src="https://link.aiagencyinstitute.com/widget/booking/02N2Rsz9K5nbH72fLyh3" style={{ width: "100%", height: 1100, border: "none", display: "block" }} scrolling="no" loading="eager" />
+            <iframe src="https://link.aiagencyinstitute.com/widget/booking/02N2Rsz9K5nbH72fLyh3" style={{ width: "100%", height: 1100, border: "none", display: "block" }} scrolling="yes" loading="eager" />
           </div>
           <div style={{ padding: "16px 20px", borderRadius: 12, background: "rgba(137,43,226,0.04)", border: "1px solid rgba(137,43,226,0.12)", fontSize: 14, color: "#6b7280", lineHeight: 1.5, textAlign: "center" }}>
             Questions? Email us at <strong style={{ color: BRAND }}>support@aiagencyinstitute.com</strong>
