@@ -221,17 +221,30 @@ export default function App() {
     setProcessing(true);
     setCardError("");
     try {
-      const res = await fetch("/api/create-payment-intent", {
+      // Step 1: Create PaymentIntent for today's charge (setup + first month + GST)
+      const intentRes = await fetch("/api/create-payment-intent", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          amount: grandTotal * 100,
+          grandTotal,
           currency: "aud",
-          metadata: { customer_name: lead.name, customer_email: lead.email, business_name: lead.businessName, abn: lead.abn, bots: selectedBots.map(b => b.name).join(", "), monthly_total: totalMonthly, setup_total: totalSetup, grand_total: grandTotal },
+          customerEmail: lead.email,
+          selectedBots: selectedBots.map(b => b.name),
+          metadata: {
+            customer_name: lead.name,
+            customer_email: lead.email,
+            business_name: lead.businessName,
+            abn: lead.abn,
+            bots: selectedBots.map(b => b.name).join(", "),
+            monthly_total: String(totalMonthly),
+            setup_total: String(totalSetup),
+            grand_total: String(grandTotal),
+          },
         }),
       });
-      const { clientSecret, error: serverError } = await res.json();
+      const { clientSecret, customerId, error: serverError } = await intentRes.json();
       if (serverError) throw new Error(serverError);
 
+      // Step 2: Confirm card payment for today's amount
       const { error, paymentIntent } = await stripeRef.current.confirmCardPayment(clientSecret, {
         payment_method: { card: cardElementRef.current, billing_details: { name: lead.name, email: lead.email } },
       });
@@ -239,7 +252,23 @@ export default function App() {
       if (error) { setCardError(error.message); setProcessing(false); return; }
 
       if (paymentIntent.status === "succeeded") {
-        sendToGHL("payment", { stripe_payment_intent: paymentIntent.id });
+        // Step 3: Create recurring subscription (monthly only, starts in 30 days)
+        await fetch("/api/create-subscription", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            customerId,
+            selectedBotIds: selected,
+            metadata: {
+              customer_name: lead.name,
+              customer_email: lead.email,
+              business_name: lead.businessName,
+              payment_intent_id: paymentIntent.id,
+            },
+          }),
+        });
+
+        // Step 4: Notify GHL
+        sendToGHL("payment", { stripe_payment_intent: paymentIntent.id, stripe_customer_id: customerId });
         setView("contract");
         window.scrollTo(0, 0);
       }
@@ -309,7 +338,7 @@ export default function App() {
                 <div style={{ fontSize: 13, color: "#6b7280" }}>Pick a time that works for you. We'll walk through your bots and get everything configured.</div>
               </div>
             </div>
-            <iframe src="https://link.aiagencyinstitute.com/widget/booking/02N2Rsz9K5nbH72fLyh3" style={{ width: "100%", height: 1100, border: "none", display: "block" }} scrolling="yes" loading="eager" />
+            <iframe src="https://link.aiagencyinstitute.com/widget/booking/02N2Rsz9K5nbH72fLyh3" style={{ width: "100%", height: 750, border: "none", display: "block" }} scrolling="no" loading="eager" />
           </div>
           <div style={{ padding: "16px 20px", borderRadius: 12, background: "rgba(137,43,226,0.04)", border: "1px solid rgba(137,43,226,0.12)", fontSize: 14, color: "#6b7280", lineHeight: 1.5, textAlign: "center" }}>
             Questions? Email us at <strong style={{ color: BRAND }}>support@aiagencyinstitute.com</strong>
