@@ -15,32 +15,33 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing customerId or bots" }, { status: 400 });
     }
 
+    const taxRateId = process.env.STRIPE_TAX_RATE_ID;
     const selectedBots = BOTS.filter((b) => selectedBotIds.includes(b.id));
 
-    // For subscriptions, Stripe requires a Price with a Product ID.
-    // We create a Product + Price on the fly for each bot.
+    // Create a Product + Price for each bot (base price, no GST baked in)
     const items = await Promise.all(
       selectedBots.map(async (bot) => {
-        // Create a product
         const product = await stripe.products.create({
           name: `${bot.icon} ${bot.name}`,
           description: bot.description,
         });
 
-        // Create a recurring price for this product (monthly + 10% GST)
         const price = await stripe.prices.create({
           product: product.id,
           currency: "aud",
-          unit_amount: Math.round(bot.price * 1.1 * 100), // monthly + GST in cents
+          unit_amount: bot.price * 100, // base price only, NO GST baked in
           recurring: { interval: "month" },
         });
 
-        return { price: price.id, quantity: 1 };
+        return {
+          price: price.id,
+          quantity: 1,
+          // Attach tax rate so GST shows as a separate line on the invoice
+          ...(taxRateId ? { tax_rates: [taxRateId] } : {}),
+        };
       })
     );
 
-    // Create subscription with 30-day trial
-    // (customer already paid first month via PaymentIntent)
     const subscription = await stripe.subscriptions.create({
       customer: customerId,
       items,
