@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
       }));
 
     // Setup fee as an invoice item added to the first invoice
-    const addInvoiceItems: Stripe.Checkout.SessionCreateParams.SubscriptionDataParams.InvoiceItem[] =
+    const addInvoiceItems: Stripe.Checkout.SessionCreateParams.SubscriptionData.InvoiceItem[] =
       [
         {
           price_data: {
