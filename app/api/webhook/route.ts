@@ -6,7 +6,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 });
 
 // Required: disable body parsing so we can verify the raw signature
-export const config = { api: { bodyParser: false } };
+export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   const sig = req.headers.get("stripe-signature");
