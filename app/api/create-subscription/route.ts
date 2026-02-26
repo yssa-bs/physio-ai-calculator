@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
     const selectedBots = BOTS.filter((b) => selectedBotIds.includes(b.id));
 
     // Build recurring line items — monthly only, NO setup fee
-    const items = selectedBots.map((bot) => ({
+    const items: any[] = selectedBots.map((bot) => ({
       price_data: {
         currency: "aud",
         product_data: {
