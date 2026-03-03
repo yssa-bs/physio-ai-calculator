@@ -138,6 +138,7 @@ export default function App() {
         fonts: [{ cssSrc: "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" }],
       });
       const card = elements.create("card", {
+        hidePostalCode: true,
         style: {
           base: { fontFamily: "'DM Sans', sans-serif", fontSize: "16px", color: "#111", "::placeholder": { color: "#c4c7cc" } },
           invalid: { color: "#ef4444" },
