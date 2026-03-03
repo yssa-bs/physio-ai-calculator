@@ -114,34 +114,46 @@ async function buildPDF(d: Data): Promise<Uint8Array> {
   text("Scope of Services — Selected AI Bots:", M, y, B, 9);
   y -= 12;
 
-  // Bot table — fixed column positions: Bot name | Monthly Fee | Setup Fee
-  const COL_BOT = M + 8;
-  const COL_MON = M + 320;
-  const COL_SET = M + 420;
+  // Bot table
+  // Row height = 20px. rect() y is bottom-left. text() y is baseline.
+  // For a row: rect at (y - 16), height 20 → top at y+4, text baseline at y
+  const RH = 20;       // row height
+  const PAD = 5;       // text padding from row bottom
   const PURPLE = rgb(0.537, 0.169, 0.886);
   const PURPLE_LIGHT = rgb(0.95, 0.88, 1.0);
+  // Fixed column x positions (left-aligned)
+  const C1 = M + 8;    // Bot name
+  const C2 = M + 300;  // Monthly Fee
+  const C3 = M + 410;  // Setup Fee
 
-  // Table header — purple
-  rect(M, y - 14, CW, 18, PURPLE);
-  text("Bot", COL_BOT, y, B, 8.5, WHITE);
-  text("Monthly Fee", COL_MON, y, B, 8.5, WHITE);
-  text("Setup Fee", COL_SET, y, B, 8.5, WHITE);
-  y -= 18;
+  // Draw a table row: bg rect + 3 text columns
+  const drawRow = (
+    rowY: number, bg: ReturnType<typeof rgb>,
+    col1: string, col2: string, col3: string,
+    font: typeof R, size: number, color: ReturnType<typeof rgb>
+  ) => {
+    rect(M, rowY - RH + PAD, CW, RH, bg);
+    text(col1, C1, rowY, font, size, color);
+    text(col2, C2, rowY, font, size, color);
+    text(col3, C3, rowY, font, size, color);
+  };
 
+  // Header row
+  drawRow(y, PURPLE, "Bot", "Monthly Fee", "Setup Fee", B, 8.5, WHITE);
+  y -= RH;
+
+  // Data rows
   for (let i = 0; i < d.selectedBots.length; i++) {
     const bot = d.selectedBots[i];
-    rect(M, y - 14, CW, 18, i % 2 === 0 ? PURPLE_LIGHT : WHITE);
-    text(bot.name, COL_BOT, y, R, 8.5);
-    text(`${fmt(bot.price)}/mo`, COL_MON, y, R, 8.5);
-    text(fmt(bot.setupFee), COL_SET, y, R, 8.5);
-    y -= 18;
+    drawRow(y, i % 2 === 0 ? PURPLE_LIGHT : WHITE,
+      bot.name, `${fmt(bot.price)}/mo`, fmt(bot.setupFee), R, 8.5, BLACK);
+    y -= RH;
   }
-  // Totals row — purple
-  rect(M, y - 14, CW, 18, PURPLE);
-  text("Total", COL_BOT, y, B, 9, WHITE);
-  text(`${fmt(d.totalMonthly)}/mo`, COL_MON, y, B, 9, WHITE);
-  text(fmt(d.totalSetup), COL_SET, y, B, 9, WHITE);
-  y -= 22;
+
+  // Totals row
+  drawRow(y, PURPLE,
+    "Total", `${fmt(d.totalMonthly)}/mo`, fmt(d.totalSetup), B, 9, WHITE);
+  y -= RH + 6;
 
   text("All amounts are in Australian Dollars (AUD) and are GST exclusive.", M, y, RI, 8, GRAY);
   y -= 20;
