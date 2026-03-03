@@ -289,30 +289,51 @@ export default function App() {
     if (!sigHasDrawn.current && !sigTyped.trim()) { setSigError("Please draw your signature or type your full name above."); return; }
     setSigError("");
     const btn = document.getElementById("sign-btn") as HTMLButtonElement;
-    if (btn) { btn.disabled = true; btn.textContent = "Submitting..."; }
+    if (btn) { btn.disabled = true; btn.textContent = "Generating contract PDF..."; }
     const canvas = canvasRef.current;
     const sigData = sigHasDrawn.current ? canvas?.toDataURL("image/png") : null;
     const sigName = sigTyped.trim() || lead.name;
     const today = new Date();
     const dateStr = today.toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" });
 
-    const contractPayload = {
-      type: "contract_signed", name: lead.name, email: lead.email, phone: lead.phone, position: lead.position,
-      business_name: lead.businessName, abn: lead.abn, entity_type: lead.entityType,
-      website: lead.website, business_address: lead.businessAddress, state: lead.state, postcode: lead.postcode,
-      selected_bots: selectedBots.map(b => b.name).join(", "),
-      selected_bots_detail: JSON.stringify(selectedBots.map(b => ({ name: b.name, monthly: b.price, setup: b.setupFee }))),
-      bot_count: selectedBots.length, monthly_total: totalMonthly, setup_total: totalSetup,
-      tax_amount: taxAmount, grand_total: grandTotal, projected_revenue: totalRevenue,
-      commencement_date: today.toISOString().split("T")[0],
-      signature_name: sigName, signature_date: today.toISOString(),
-      signature_image: sigData || "", agreement_version: "1.0",
-      agreement_summary: `SERVICE AGREEMENT - AI Agency Institute\nSigned: ${dateStr}\nClient: ${lead.name} (${lead.position})\nBusiness: ${lead.businessName} (${lead.entityType})\nABN: ${lead.abn}\nAddress: ${lead.businessAddress}, ${lead.state} ${lead.postcode}\n---\nSelected Bots:\n${selectedBots.map(b => `  - ${b.name} - ${fmt(b.price)}/mo + ${fmt(b.setupFee)} setup`).join("\n")}\n---\nMonthly Fee: ${fmt(totalMonthly)} +GST\nSetup Fee: ${fmt(totalSetup)} +GST\nTotal Charged Today: ${fmt(grandTotal)} (incl. GST)\nDuration: 12 months (auto-renewing)\n---\nSigned by: ${sigName}\nSignature type: ${sigData ? "Drawn" : "Typed"}`,
+    const pdfPayload = {
+      // Contact
+      name: lead.name, email: lead.email, phone: lead.phone, position: lead.position,
+      // Business
+      businessName: lead.businessName, abn: lead.abn, entityType: lead.entityType,
+      website: lead.website, businessAddress: lead.businessAddress, state: lead.state, postcode: lead.postcode,
+      // Bots
+      selectedBots: selectedBots.map(b => ({ name: b.name, icon: b.icon, price: b.price, setupFee: b.setupFee })),
+      // Financials
+      totalMonthly, totalSetup, taxAmount, grandTotal,
+      // Signature
+      signatureName: sigName,
+      signatureDate: dateStr,
+      signatureImage: sigData || "",
+      commencementDate: today.toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" }),
     };
 
     try {
-      await fetch("/api/ghl-contract", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(contractPayload) });
-    } catch {}
+      // Generate PDF + send to GHL webhook
+      const res = await fetch("/api/generate-contract-pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(pdfPayload),
+      });
+
+      if (res.ok) {
+        // Trigger browser download of the signed PDF
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `AI_Agency_Service_Agreement_${lead.businessName.replace(/\s+/g, "_")}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    } catch (e) {
+      console.error("Contract PDF error:", e);
+    }
 
     setView("complete");
     window.scrollTo(0, 0);
@@ -338,7 +359,7 @@ export default function App() {
                 <div style={{ fontSize: 13, color: "#6b7280" }}>Pick a time that works for you. We'll walk through your bots and get everything configured.</div>
               </div>
             </div>
-            <iframe src="https://link.aiagencyinstitute.com/widget/booking/02N2Rsz9K5nbH72fLyh3" style={{ width: "100%", height: 900, border: "none", display: "block" }} scrolling="no" loading="eager" />
+            <iframe src="https://link.aiagencyinstitute.com/widget/booking/02N2Rsz9K5nbH72fLyh3" style={{ width: "100%", height: 750, border: "none", display: "block" }} scrolling="no" loading="eager" />
           </div>
           <div style={{ padding: "16px 20px", borderRadius: 12, background: "rgba(137,43,226,0.04)", border: "1px solid rgba(137,43,226,0.12)", fontSize: 14, color: "#6b7280", lineHeight: 1.5, textAlign: "center" }}>
             Questions? Email us at <strong style={{ color: BRAND }}>support@aiagencyinstitute.com</strong>
