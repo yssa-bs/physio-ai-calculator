@@ -339,7 +339,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Return PDF for browser download
-    return new NextResponse(pdfBytes, {
+    return new NextResponse(Buffer.from(pdfBytes), {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="AI_Agency_Service_Agreement.pdf"`,
