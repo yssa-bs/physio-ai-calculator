@@ -104,7 +104,6 @@ async function buildPDF(d: Data): Promise<Uint8Array> {
     const [label, val, italic] = schedRows[i];
     if (i % 2 === 0) rect(M, y - ROW_H + 5, CW, ROW_H, LGRAY);
     else rect(M, y - ROW_H + 5, CW, ROW_H, WHITE);
-    rect(M, y - ROW_H + 5, CW, ROW_H, rgb(1,1,1,0) as any); // border
     text(label, labelX, y, B, 8.5);
     text(val, valX, y, italic ? BI : B, 8.5);
     y -= ROW_H;
@@ -257,7 +256,7 @@ async function buildPDF(d: Data): Promise<Uint8Array> {
   // Draw two-column box
   rect(M, y - tableH, colW, tableH, rgb(0.98, 0.98, 0.98));
   rect(col2, y - tableH, colW, tableH, rgb(0.98, 0.98, 0.98));
-  page.drawRectangle({ x: M, y: y - tableH, width: CW, height: tableH, borderColor: rgb(0.7,0.7,0.7), borderWidth: 0.5, color: rgb(1,1,1,0) as any });
+  page.drawRectangle({ x: M, y: y - tableH, width: CW, height: tableH, borderColor: rgb(0.7,0.7,0.7), borderWidth: 0.5, opacity: 0 });
   line(M + colW + 6, y, M + colW + 6, y - tableH);
 
   // Company column
