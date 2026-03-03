@@ -99,13 +99,13 @@ async function buildPDF(d: Data): Promise<Uint8Array> {
     ["Duration:",         "12 Months (auto-renewing)",                                            false],
   ];
 
-  const ROW_H = 17, labelX = M + 6, valX = M + 160;
+  const ROW_H = 18, labelX = M + 6, valX = M + 160;
+  const SPAD = 5;
   for (let i = 0; i < schedRows.length; i++) {
     const [label, val, italic] = schedRows[i];
-    if (i % 2 === 0) rect(M, y - ROW_H + 5, CW, ROW_H, LGRAY);
-    else rect(M, y - ROW_H + 5, CW, ROW_H, WHITE);
-    text(label, labelX, y, B, 8.5);
-    text(val, valX, y, italic ? BI : B, 8.5);
+    rect(M, y, CW, ROW_H, i % 2 === 0 ? LGRAY : WHITE);
+    text(label, labelX, y + SPAD, B, 8.5);
+    text(val, valX, y + SPAD, italic ? BI : B, 8.5);
     y -= ROW_H;
   }
   y -= 10;
