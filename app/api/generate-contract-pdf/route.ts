@@ -114,26 +114,33 @@ async function buildPDF(d: Data): Promise<Uint8Array> {
   text("Scope of Services — Selected AI Bots:", M, y, B, 9);
   y -= 12;
 
-  // Table header
-  rect(M, y - 14, CW, 18, rgb(0.15, 0.15, 0.15));
-  text("Bot", M + 8, y, B, 8.5, WHITE);
-  text("Monthly Fee", M + 330, y, B, 8.5, WHITE);
-  text("Setup Fee", M + 430, y, B, 8.5, WHITE);
+  // Bot table — fixed column positions: Bot name | Monthly Fee | Setup Fee
+  const COL_BOT = M + 8;
+  const COL_MON = M + 320;
+  const COL_SET = M + 420;
+  const PURPLE = rgb(0.537, 0.169, 0.886);
+  const PURPLE_LIGHT = rgb(0.95, 0.88, 1.0);
+
+  // Table header — purple
+  rect(M, y - 14, CW, 18, PURPLE);
+  text("Bot", COL_BOT, y, B, 8.5, WHITE);
+  text("Monthly Fee", COL_MON, y, B, 8.5, WHITE);
+  text("Setup Fee", COL_SET, y, B, 8.5, WHITE);
   y -= 18;
 
   for (let i = 0; i < d.selectedBots.length; i++) {
     const bot = d.selectedBots[i];
-    rect(M, y - 14, CW, 18, i % 2 === 0 ? LGRAY : WHITE);
-    text(bot.name, M + 8, y, R, 8.5);
-    text(`${fmt(bot.price)}/mo`, M + 330, y, R, 8.5);
-    text(fmt(bot.setupFee), M + 430, y, R, 8.5);
+    rect(M, y - 14, CW, 18, i % 2 === 0 ? PURPLE_LIGHT : WHITE);
+    text(bot.name, COL_BOT, y, R, 8.5);
+    text(`${fmt(bot.price)}/mo`, COL_MON, y, R, 8.5);
+    text(fmt(bot.setupFee), COL_SET, y, R, 8.5);
     y -= 18;
   }
-  // Totals row
-  rect(M, y - 14, CW, 18, rgb(0.15, 0.15, 0.15));
-  text("Total", M + 8, y, B, 9, WHITE);
-  text(`${fmt(d.totalMonthly)}/mo`, M + 330, y, B, 9, WHITE);
-  text(fmt(d.totalSetup), M + 430, y, B, 9, WHITE);
+  // Totals row — purple
+  rect(M, y - 14, CW, 18, PURPLE);
+  text("Total", COL_BOT, y, B, 9, WHITE);
+  text(`${fmt(d.totalMonthly)}/mo`, COL_MON, y, B, 9, WHITE);
+  text(fmt(d.totalSetup), COL_SET, y, B, 9, WHITE);
   y -= 22;
 
   text("All amounts are in Australian Dollars (AUD) and are GST exclusive.", M, y, RI, 8, GRAY);
