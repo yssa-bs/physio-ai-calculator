@@ -127,18 +127,22 @@ async function buildPDF(d: Data): Promise<Uint8Array> {
   const C3 = M + 410;  // Setup Fee
 
   // Draw a table row: bg rect + 3 text columns
+  // rect(x, y, w, h) — y is BOTTOM of rect
+  // text(s, x, y) — y is BASELINE of text
+  // So: rect bottom = rowY, rect top = rowY + RH
+  // Text baseline = rowY + PAD (sits PAD px above bottom of rect)
   const drawRow = (
     rowY: number, bg: ReturnType<typeof rgb>,
     col1: string, col2: string, col3: string,
     font: typeof R, size: number, color: ReturnType<typeof rgb>
   ) => {
-    rect(M, rowY - RH + PAD, CW, RH, bg);
-    text(col1, C1, rowY, font, size, color);
-    text(col2, C2, rowY, font, size, color);
-    text(col3, C3, rowY, font, size, color);
+    rect(M, rowY, CW, RH, bg);                    // bg rect: bottom=rowY, top=rowY+RH
+    text(col1, C1, rowY + PAD, font, size, color); // text baseline inside rect
+    text(col2, C2, rowY + PAD, font, size, color);
+    text(col3, C3, rowY + PAD, font, size, color);
   };
 
-  // Header row
+  // Header row — draw then move y down by RH
   drawRow(y, PURPLE, "Bot", "Monthly Fee", "Setup Fee", B, 8.5, WHITE);
   y -= RH;
 
